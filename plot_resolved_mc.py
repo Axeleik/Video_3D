@@ -128,10 +128,9 @@ print 'path_weights = {}'.format(path_weights)
 #     anisotropy=anisotropy,
 #     vmin=path_vmin, vmax=path_vmax
 # )
-
+"""
 # Segmentation and path probs
-mlab.figure(bgcolor=(0, 0, 0))
-fig=mlab.gcf()
+nsp.start_figure()
 
 
 nsp.add_iso_surfaces(segmentation, anisotropy=anisotropy, colormap='Spectral',
@@ -171,20 +170,9 @@ nsp.plot_multiple_paths_with_mean_class(
     anisotropy=anisotropy,
     vmin=path_vmin, vmax=path_vmax
 )
-"""
-@mlab.animate(delay=75)
-def anim():
-    f = mlab.gcf()
-    while 1:
-        f.scene.camera.azimuth(1)
-        f.scene.render()
-        yield
 
-a = anim()
-mlab.show(stop=True)
-
+nsp.movie_show()
 import sys
 sys.exit()
 
-#view:  (24.626060565275147, 14.084564686249633, 1422.4031003733319, array([  488.44750048, -1200.85880091, -1296.52847167]))
-#roll:  -111.881859441
+#ffmpeg -f image2 -r 100 -pattern_type glob -i '*.png' output2.mp4
