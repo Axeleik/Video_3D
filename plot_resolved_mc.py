@@ -30,7 +30,7 @@ with open(cache_folder + 'path_data/resolve_paths_probs_{}.pkl'.format(resolve_i
     path_weights = pickle.load(f)
 
 # Load initial segmentation
-segmentation = vigra.readHDF5(cache_folder + '../result.h5', 'z/1/test')
+segmentation = vigra.readHDF5(cache_folder + '../ground_truth.h5', 'z/1/neuron_ids')
 # Mask segmentation
 segmentation[segmentation != resolve_id] = 0
 
