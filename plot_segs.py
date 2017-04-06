@@ -2,7 +2,7 @@ from neuro_seg_plot import NeuroSegPlot as nsp
 import pickle
 import vigra
 import numpy as np
-import h5py
+
 # # Load path
 # path_file = '/mnt/localdata01/jhennies/neuraldata/results/multicut_workflow/170331_splB_z1/cache/path_data/path_splB_z1.pkl'
 # with open(path_file, mode='r') as f:
@@ -10,9 +10,6 @@ import h5py
 #
 # paths = path_data['paths']
 # paths_to_objs = path_data['paths_to_objs']
-
-def printname(name):
-    print name
 
 
 def find_bounding_rect(image):
@@ -26,36 +23,31 @@ def find_bounding_rect(image):
 
     return np.s_[rows.min():rows.max()+1, cols.min():cols.max()+1, bnds.min():bnds.max()+1]
 
-"""
+
 with open(
-        '/mnt/localdata01/jhennies/neuraldata/results/multicut_workflow/170331_splB_z1_defcor/evaluation.pkl',
+        '/media/axeleik/EA62ECB562EC8821/data/plotted_figure/170331_splB_z1_defcor/evaluation.pkl',
         mode='r'
 ) as f:
     eval_data = pickle.load(f)
-"""
+
 # Load segmentation
 print 'Loading segmentation...'
-seg = vigra.readHDF5('/media/axeleik/EA62ECB562EC8821/data/result.h5', 'z/1/test')
+seg = vigra.readHDF5('/media/axeleik/EA62ECB562EC8821/data/plotted_figure/170331_splB_z1_defcor/result.h5', 'z/1/test')
 print 'Loading resolved segmentation...'
-newseg = vigra.readHDF5('/media/axeleik/EA62ECB562EC8821/data/result_resolved.h5', 'z/1/test')
+newseg = vigra.readHDF5('/media/axeleik/EA62ECB562EC8821/data/plotted_figure/170331_splB_z1_defcor/result_resolved_thresh_0.5.h5', 'z/1/test')
 print 'Loading gt...'
 gt = vigra.readHDF5(
-    '/media/axeleik/EA62ECB562EC8821/data/ground_truth.h5',
+    '/media/axeleik/EA62ECB562EC8821/data/plotted_figure/resolve_false_merges_sources/cremi.splB.train.raw_neurons_defect_correct.crop.axes_xyz.split_z.h5',
     'z/1/neuron_ids'
 )
-f = h5py.File('/media/axeleik/EA62ECB562EC8821/data/result.h5', mode='r')
-f.visit(printname)
-
-ground_truth = np.array(f["z/1/test"])
-print np.unique(ground_truth)
-#input("hi")
 
 
-id = 109#eval_data[0.5]['merged_split'][30]
+
+id = eval_data[0.5]['merged_split'][1]
 print 'ID = {}'.format(id)
 
-number_of_objects_to_plot = 2
-
+number_of_objects_to_plot_newseg = 5
+number_of_objects_to_plot_gt = 5
 # id = 101.0
 # path_to_obj = paths_to_objs[id]
 # print 'path_to_obj = {}'.format(path_to_obj)
@@ -92,9 +84,9 @@ def largest_lbls(im, n):
 # from copy import deepcopy
 tgt = np.zeros(gt.shape, dtype=gt.dtype)
 tnewseg = np.zeros(newseg.shape, dtype=newseg.dtype)
-for l in largest_lbls(gt, number_of_objects_to_plot):
+for l in largest_lbls(gt, number_of_objects_to_plot_gt):
     tgt[gt == l] = l
-for l in largest_lbls(newseg, number_of_objects_to_plot):
+for l in largest_lbls(newseg, number_of_objects_to_plot_newseg):
     tnewseg[newseg == l] = l
 gt = tgt
 newseg = tnewseg
@@ -102,25 +94,51 @@ newseg = tnewseg
 # sorted_ids = np.argsort(gt_counts)
 # sorted_uniques = gt_unique[sorted_ids]
 
-seg, _, _ = vigra.analysis.relabelConsecutive(seg, start_label = 0, keep_zeros=False)
+seg, _, _ = vigra.analysis.relabelConsecutive(seg, start_label = 0,keep_zeros=False)
 newseg, _, _ = vigra.analysis.relabelConsecutive(newseg, start_label=0,keep_zeros=False)
 gt, _, _ = vigra.analysis.relabelConsecutive(gt, start_label=0,keep_zeros=False)
 
-gt=gt+200
+newseg = newseg + np.amax(np.unique(gt))
+newseg[newseg == np.amax(np.unique(gt))] = 0
+
+for i in np.unique(gt)[1:]:
+
+    a, b = np.unique(newseg[gt == i], return_counts=True)
+    c = 0
+
+    if a[np.argsort(b)][-1] == 0 and len(np.argsort(b))==1:
+        continue
+
+    elif a[np.argsort(b)][-1] == 0:
+        c = a[np.argsort(b)[-2]]
+
+
+
+    else:
+        c = a[np.argsort(b)[-1]]
+    newseg[newseg == c] = i
+
+for idx,elem in enumerate(np.unique(newseg)[np.unique(newseg)>np.amax(np.unique(gt))]):
+    newseg[newseg==elem]=np.amax(np.unique(gt))+idx+1
+
 
 print 'Starting to plot...'
 
-nsp.start_figure()
+#nsp.start_figure()
 
-# nsp.add_path(paths[id].swapaxes(0, 1), anisotropy=[1, 1, 10])
-nsp.add_iso_surfaces(seg, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax(seg), opacity=0.5)
-
-nsp.start_figure()
-
-nsp.add_iso_surfaces(newseg, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax(newseg), opacity=0.5)
+#nsp.add_path(paths[id].swapaxes(0, 1), anisotropy=[1, 1, 10])
+#nsp.add_iso_surfaces(seg, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax(seg), opacity=0.5)
 
 nsp.start_figure()
 
-nsp.add_iso_surfaces(gt, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax(gt), opacity=0.5)
-nsp.movie_show()
+nsp.add_iso_surfaces(newseg, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax((np.amax(newseg),np.amax(gt))), opacity=0.5)
+
+nsp.start_figure()
+
+nsp.add_iso_surfaces(gt, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax((np.amax(newseg),np.amax(gt))), opacity=0.5)
+nsp.show()
+
+
+
+
 
