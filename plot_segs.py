@@ -2,6 +2,7 @@ from neuro_seg_plot import NeuroSegPlot as nsp
 import pickle
 import vigra
 import numpy as np
+import mayavi
 
 # # Load path
 # path_file = '/mnt/localdata01/jhennies/neuraldata/results/multicut_workflow/170331_splB_z1/cache/path_data/path_splB_z1.pkl'
@@ -41,13 +42,13 @@ gt = vigra.readHDF5(
     'z/1/neuron_ids'
 )
 
-
+#seg = seg[0:200, 0]
 
 id = eval_data[0.5]['merged_split'][1]
 print 'ID = {}'.format(id)
 
 number_of_objects_to_plot_newseg = 5
-number_of_objects_to_plot_gt = 5
+number_of_objects_to_plot_gt = 8
 # id = 101.0
 # path_to_obj = paths_to_objs[id]
 # print 'path_to_obj = {}'.format(path_to_obj)
@@ -101,22 +102,42 @@ gt, _, _ = vigra.analysis.relabelConsecutive(gt, start_label=0,keep_zeros=False)
 newseg = newseg + np.amax(np.unique(gt))
 newseg[newseg == np.amax(np.unique(gt))] = 0
 
-for i in np.unique(gt)[1:]:
 
-    a, b = np.unique(newseg[gt == i], return_counts=True)
-    c = 0
+z1,z2=np.unique(gt,return_counts=True)
+z1=z1[np.argsort(z2)][::-1]
+list=[0]
+for i in z1:
+    print "i: ", i
 
-    if a[np.argsort(b)][-1] == 0 and len(np.argsort(b))==1:
+
+    if i ==0:
         continue
 
-    elif a[np.argsort(b)][-1] == 0:
-        c = a[np.argsort(b)[-2]]
 
+    a, b = np.unique(newseg[gt == i], return_counts=True)
+    a = a[np.argsort(b)][::-1]
+    c = 0
 
+    if a[0] == 0 and len(a)==1:
+        continue
 
     else:
-        c = a[np.argsort(b)[-1]]
-    newseg[newseg == c] = i
+        for idx,elem in enumerate(a):
+            if elem in list:
+                continue
+            c = elem
+            newseg[newseg == c] = i
+            print "C: ",c
+            break
+
+
+
+
+
+
+
+    print "np.unique(newseg):", np.unique(newseg)
+    list.append(i)
 
 for idx,elem in enumerate(np.unique(newseg)[np.unique(newseg)>np.amax(np.unique(gt))]):
     newseg[newseg==elem]=np.amax(np.unique(gt))+idx+1
@@ -124,19 +145,18 @@ for idx,elem in enumerate(np.unique(newseg)[np.unique(newseg)>np.amax(np.unique(
 
 print 'Starting to plot...'
 
-#nsp.start_figure()
+nsp.start_figure()
 
 #nsp.add_path(paths[id].swapaxes(0, 1), anisotropy=[1, 1, 10])
 #nsp.add_iso_surfaces(seg, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax(seg), opacity=0.5)
-
-nsp.start_figure()
+#nsp.start_figure()
 
 nsp.add_iso_surfaces(newseg, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax((np.amax(newseg),np.amax(gt))), opacity=0.5)
 
-nsp.start_figure()
+#nsp.start_figure()
 
-nsp.add_iso_surfaces(gt, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax((np.amax(newseg),np.amax(gt))), opacity=0.5)
-nsp.show()
+#nsp.add_iso_surfaces(gt, anisotropy=[1, 1, 10], vmin=0, vmax=np.amax((np.amax(newseg),np.amax(gt))), opacity=0.5)
+nsp.movie_show()
 
 
 
